@@ -18,14 +18,14 @@ def convert_unit(value, from_unit, to_unit):
     # Define conversion factors
     conversion_factors = {
         # Volume
-        'liters_to_gallons': 0.264172,
-        'gallons_to_liters': 3.78541,
-        'cubic_meters_to_cubic_feet': 35.3147,
-        'cubic_feet_to_cubic_meters': 0.0283168,
+        'litres_to_gallons': 0.264172,
+        'gallons_to_litres': 3.78541,
+        'mètres_cubes_to_pieds_cubes': 35.3147,
+        'pieds_cubes_to_mètres_cubes': 0.0283168,
 
         # Torque
-        'newton_meters_to_foot_pounds': 0.737562,
-        'foot_pounds_to_newton_meters': 1.35582,
+        'newton_mètres_to_livres_pieds': 0.737562,
+        'livres_pieds_to_newton_mètres': 1.35582,
 
         # Energy
         'joules_to_btu': 0.000947817,
