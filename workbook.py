@@ -15,34 +15,58 @@ def pelec(V,I,f=1):
     return p
     
 def convert_unit(value, from_unit, to_unit):
-    # Define conversion factors
     conversion_factors = {
         # Volume
-        'litres_to_gallons': 0.264172,
-        'gallons_to_litres': 3.78541,
-        'mètres_cubes_to_pieds_cubes': 35.3147,
-        'pieds_cubes_to_mètres_cubes': 0.0283168,
+        ("litres", "millilitres"): 1000,
+        ("millilitres", "litres"): 0.001,
+        ("litres", "gallons"): 0.264172,
+        ("gallons", "litres"): 3.78541,
+        ("mètres_cubes", "pieds_cubes"): 35.3147,
+        ("pieds_cubes", "mètres_cubes"): 0.0283168,
 
-        # Torque
-        'newton_mètres_to_livres_pieds': 0.737562,
-        'livres_pieds_to_newton_mètres': 1.35582,
+        # Longueur
+        ("mètres", "millimètres"): 1000,
+        ("millimètres", "mètres"): 0.001,
+        ("mètres", "centimètres"): 100,
+        ("centimètres", "mètres"): 0.01,
+        ("mètres", "pieds"): 3.28084,
+        ("pieds", "mètres"): 0.3048,
+        ("kilomètres", "miles"): 0.621371,
+        ("miles", "kilomètres"): 1.60934,
 
-        # Energy
-        'joules_to_btu': 0.000947817,
-        'btu_to_joules': 1055.06,
-        'joules_to_calories': 0.239006,
-        'calories_to_joules': 4.184,
-        'joules_to_kwh': 2.77778e-7,
-        'kwh_to_joules': 3.6e6,
+        # Poids/Masse
+        ("kilogrammes", "grammes"): 1000,
+        ("grammes", "kilogrammes"): 0.001,
+        ("kilogrammes", "livres"): 2.20462,
+        ("livres", "kilogrammes"): 0.453592,
+        ("grammes", "onces"): 0.035274,
+        ("onces", "grammes"): 28.3495,
+
+        # Énergie
+        ("joules", "BTU"): 0.000947817,
+        ("BTU", "joules"): 1055.06,
+        ("calories", "joules"): 4.184,
+        ("joules", "calories"): 0.239006,
+        ("kwh", "joules"): 3600000,
+        ("joules", "kwh"): 2.77778e-7,
+
+        # Force
+        ("newton_mètres", "livres_pieds"): 0.737562,
+        ("livres_pieds", "newton_mètres"): 1.35582,
     }
-
-    # Define key for conversion
-    key = f'{from_unit}_to_{to_unit}'
     
-    if key not in conversion_factors:
-        raise ValueError(f"Conversion from {from_unit} to {to_unit} not supported.")
+    # Température conversion requires different handling
+    if from_unit == "celsius" and to_unit == "fahrenheit":
+        return (value * 9/5) + 32
+    elif from_unit == "fahrenheit" and to_unit == "celsius":
+        return (value - 32) * 5/9
 
-    # Perform the conversion
-    converted_value = value * conversion_factors[key]
-    return converted_value
+    try:
+        factor = conversion_factors[(from_unit, to_unit)]
+        return value * factor
+    except KeyError:
+        raise ValueError(f"Conversion de {from_unit} à {to_unit} non supportée.")
+
+
+
 

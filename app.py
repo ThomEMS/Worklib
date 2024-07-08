@@ -1,3 +1,4 @@
+
 import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QTabWidget, QVBoxLayout, 
@@ -9,7 +10,7 @@ import workbook as eng
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("ING APPS")
+        self.setWindowTitle("Outil de Conversion d'Unités")
         
         # Créer le widget à onglets
         self.tabs = QTabWidget()
@@ -45,7 +46,13 @@ class MainWindow(QMainWindow):
         self.to_unit = QComboBox()
         
         # Remplir les menus déroulants
-        units = ["litres", "gallons", "mètres_cubes", "pieds_cubes", "newton_mètres", "livres_pieds", "joules", "btu", "calories", "kwh"]
+        units = [
+            "litres", "millilitres", "gallons", "mètres_cubes", "pieds_cubes", 
+            "newton_mètres", "livres_pieds", "joules", "btu", "calories", "kwh",
+            "mètres", "millimètres", "centimètres", "pieds", "kilomètres", "miles",
+            "kilogrammes", "grammes", "livres", "onces",
+            "celsius", "fahrenheit"
+        ]
         self.from_unit.addItems(units)
         self.to_unit.addItems(units)
         
