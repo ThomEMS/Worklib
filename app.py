@@ -57,8 +57,15 @@ class MainWindow(QMainWindow):
         # Section Température
         self.create_conversion_section("Température", ["celsius", "fahrenheit"], self.right_column)
 
-        # Section Force
-        self.create_conversion_section("Force", ["newton_mètres", "livres_pieds"], self.right_column)
+        # Section Couple
+        self.create_conversion_section("Couple", ["newton_mètres", "livres_pieds"], self.right_column)
+
+        # Section Débits Volumique
+        self.create_conversion_section("Débits volumique",["litres_par_seconde","millilitres_par_seconde","gallons_par_minute","mètres_cubes_par_seconde","pieds_cubes_par_seconde","litres_par_minute","mètres_cubes_par_heure"],self.left_column)
+
+        # Section Débits massique
+        self.create_conversion_section("Débits massique",["kilogrammes_par_seconde","grammes_par_seconde","tonnes_par_seconde","livres_par_seconde"],self.right_column)
+
 
         # Ajouter les colonnes au layout principal
         self.column_layout.addLayout(self.left_column)
