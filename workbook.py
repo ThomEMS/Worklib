@@ -7,16 +7,45 @@ import numpy as np
 import math
 import itertools 
 
-std_duct_in = []
 
-# Ajout des tailles de 3 à 9.5 avec un pas de 0.5
-std_duct_in.extend(np.arange(3, 10, 0.5))
+# Dimensions des conduits
+widths = [100, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1200]
+heights = [200, 250, 300, 400, 500, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
 
-# Ajout des tailles de 10 à 20 avec un pas de 1
-std_duct_in.extend(range(10, 21))
+# Tableau des combinaisons de grosseur
+dimensions = [
+    [1,  1,  2,  3,  3,  3,  3,  3,  3,  3,  3],  # Height (mm) 200
+    [2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  3],  # Height (mm) 250
+    [1,  1,  1,  2,  2,  3,  3,  3,  3,  3,  3],  # Height (mm) 300
+    [1,  1,  1,  2,  1,  2,  3,  3,  3,  3,  3],  # Height (mm) 400
+    [3,  1,  1,  2,  1,  1,  2,  3,  3,  3,  3],  # Height (mm) 500
+    [3,  1,  1,  2,  1,  1,  1,  2,  3,  3,  3],  # Height (mm) 600
+    [3,  3,  1,  2,  1,  1,  1,  1,  2,  3,  3],  # Height (mm) 800
+    [3,  3,  3,  2,  1,  1,  1,  1,  1,  2,  3],  # Height (mm) 1000
+    [3,  3,  3,  3,  1,  1,  1,  1,  1,  1,  2],  # Height (mm) 1200
+    [3,  3,  3,  3,  3,  2,  2,  2,  2,  2,  2],  # Height (mm) 1400
+    [3,  3,  3,  3,  3,  1,  1,  1,  1,  1,  1],  # Height (mm) 1600
+    [3,  3,  3,  3,  3,  3,  2,  2,  2,  2,  2],  # Height (mm) 1800
+    [3,  3,  3,  3,  3,  3,  3,  3,  1,  1,  1],  # Height (mm) 2000
+]
 
-# Ajout des tailles de 25 à 100 avec un pas de 5
-std_duct_in.extend(range(25, 105, 5))
+# Liste des combinaisons largeur x hauteur où la combinaison de grosseur est 1
+std_duct_rect = []
+# Liste des combinaisons largeur x hauteur où la combinaison de grosseur est 1, en pouces
+std_duct_rect_inches = []
+
+def mm_to_inches(mm):
+    inches = mm / 25.4
+    return round(inches * 4) / 4
+
+# Parcourir le tableau et ajouter les combinaisons à la liste
+for i, height in enumerate(heights):
+    for j, width in enumerate(widths):
+        if dimensions[i][j] == 1:
+            std_duct_rect.append((width, height))
+            width_inches = mm_to_inches(width)
+            height_inches = mm_to_inches(height)
+            std_duct_rect_inches.append((width_inches, height_inches))
 
 
 def pelec(V,I,f=1):
@@ -127,6 +156,7 @@ def round_duct_diam_in(air_flow_CFM,head_loss_100ft):
     return (diam, math.ceil(diam))
 
 def round_duct_vel(cfm,diam_in):
+    #retourne la vélocité pour un diam circulaire donnée
     a = math.pi() * (diam_in/(2*12))**2 #aire de passage en ft^2
     vel = cfm/a #en ft/min
     return (vel,"ft/min")
@@ -134,11 +164,19 @@ def round_duct_vel(cfm,diam_in):
 def square_duct_diam_in(cfm,head_loss):
     cond_sizes = []
     rd_diam = round_duct_diam_in(cfm,head_loss)[0]
-    for a, b in itertools.product(std_duct_in,std_duct_in):
+    for a, b in std_duct_rect_inches:
         d = 1.30*(a*b)**0.625/(a+b)**0.25
         if d >= rd_diam and d <= rd_diam+1:
             if (a,b) and (b,a) not in cond_sizes:
                 if max((a,b))/min((a,b)) <= 3:
                     cond_sizes.append((a,b))
     return cond_sizes
+print(std_duct_rect_inches)
+def square_duct_vel(cfm,dim):
+    #retourne la vélocité pour les dimension rectengulaire données (a,b) en pouce
+    a = (dim(0)/12)*(dim(1)/12) #aire de passage en ft^2
+    vel = cfm/a #en ft/min
+    return (vel,"ft/min")
 
+sizes = square_duct_diam_in(1000,0.08)
+print(sizes)
