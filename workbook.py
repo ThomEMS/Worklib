@@ -28,6 +28,7 @@ dimensions = [
     [3,  3,  3,  3,  3,  3,  2,  2,  2,  2,  2],  # Height (mm) 1800
     [3,  3,  3,  3,  3,  3,  3,  3,  1,  1,  1],  # Height (mm) 2000
 ]
+#pour les grosseur std le 1 son preferable 2 acceptable et 3 non standard
 
 # Liste des combinaisons largeur x hauteur où la combinaison de grosseur est 1
 std_duct_rect = []
