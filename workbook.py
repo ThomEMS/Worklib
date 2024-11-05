@@ -9,26 +9,9 @@ import itertools
 
 
 # Dimensions des conduits
-widths = [100, 150, 200, 250, 300, 400, 500, 600, 800, 1000, 1200]
+widths = [100, 150, 200, 250, 300, 350, 400, 450, 500, 550, 600, 650, 700, 750, 800, 850]
 heights = [200, 250, 300, 400, 500, 600, 800, 1000, 1200, 1400, 1600, 1800, 2000]
 
-# Tableau des combinaisons de grosseur
-dimensions = [
-    [1,  1,  2,  3,  3,  3,  3,  3,  3,  3,  3],  # Height (mm) 200
-    [2,  2,  2,  2,  3,  3,  3,  3,  3,  3,  3],  # Height (mm) 250
-    [1,  1,  1,  2,  2,  3,  3,  3,  3,  3,  3],  # Height (mm) 300
-    [1,  1,  1,  2,  1,  2,  3,  3,  3,  3,  3],  # Height (mm) 400
-    [3,  1,  1,  2,  1,  1,  2,  3,  3,  3,  3],  # Height (mm) 500
-    [3,  1,  1,  2,  1,  1,  1,  2,  3,  3,  3],  # Height (mm) 600
-    [3,  3,  1,  2,  1,  1,  1,  1,  2,  3,  3],  # Height (mm) 800
-    [3,  3,  3,  2,  1,  1,  1,  1,  1,  2,  3],  # Height (mm) 1000
-    [3,  3,  3,  3,  1,  1,  1,  1,  1,  1,  2],  # Height (mm) 1200
-    [3,  3,  3,  3,  3,  2,  2,  2,  2,  2,  2],  # Height (mm) 1400
-    [3,  3,  3,  3,  3,  1,  1,  1,  1,  1,  1],  # Height (mm) 1600
-    [3,  3,  3,  3,  3,  3,  2,  2,  2,  2,  2],  # Height (mm) 1800
-    [3,  3,  3,  3,  3,  3,  3,  3,  1,  1,  1],  # Height (mm) 2000
-]
-#pour les grosseur std le 1 son preferable 2 acceptable et 3 non standard
 
 # Liste des combinaisons largeur x hauteur où la combinaison de grosseur est 1
 std_duct_rect = []
@@ -40,9 +23,9 @@ def mm_to_inches(mm):
     return round(inches * 4) / 4
 
 # Parcourir le tableau et ajouter les combinaisons à la liste
-for i, height in enumerate(heights):
+for i, height in enumerate(widths):
     for j, width in enumerate(widths):
-        if dimensions[i][j] == 1:
+        if height/width >= 2/3 and height/width <= 1:
             std_duct_rect.append((width, height))
             width_inches = mm_to_inches(width)
             height_inches = mm_to_inches(height)
@@ -59,6 +42,8 @@ def pelec(V,I,f=1):
     
 def convert_unit(value, from_unit, to_unit):
     conversion_factors = {
+        #Aire
+        ("mètres_carrés","pieds_carrés"):10.76391042,
         # Volume
         ("litres", "millilitres"): 1000,
         ("millilitres", "litres"): 0.001,
@@ -78,6 +63,8 @@ def convert_unit(value, from_unit, to_unit):
         ("pieds", "mètres"): 0.3048,
         ("kilomètres", "miles"): 0.621371,
         ("miles", "kilomètres"): 1.60934,
+        ("millimètres","pouces"): 1/25.4,
+        ("pouces","millimètres"): 25.4,
 
         # Poids/Masse
         ("kilogrammes", "grammes"): 1000,
@@ -167,17 +154,66 @@ def square_duct_diam_in(cfm,head_loss):
     rd_diam = round_duct_diam_in(cfm,head_loss)[0]
     for a, b in std_duct_rect_inches:
         d = 1.30*(a*b)**0.625/(a+b)**0.25
-        if d >= rd_diam and d <= rd_diam+1:
+        if d >= rd_diam and d <= rd_diam+2:
+            if (a,b) and (b,a) not in cond_sizes:
+                if max((a,b))/min((a,b)) <= 2:
+                    cond_sizes.append((a,b))
+    return cond_sizes
+
+def square_duct_diam_mm(cfm,head_loss):
+    cond_sizes = []
+    rd_diam = convert_unit((round_duct_diam_in(cfm,head_loss)[0]),"pouces","millimètres")
+    for a, b in std_duct_rect:
+        d = 1.30*(a*b)**0.625/(a+b)**0.25
+        if d >= rd_diam and d <= rd_diam + 50:
             if (a,b) and (b,a) not in cond_sizes:
                 if max((a,b))/min((a,b)) <= 3:
                     cond_sizes.append((a,b))
     return cond_sizes
-print(std_duct_rect_inches)
+
+
 def square_duct_vel(cfm,dim):
     #retourne la vélocité pour les dimension rectengulaire données (a,b) en pouce
     a = (dim(0)/12)*(dim(1)/12) #aire de passage en ft^2
     vel = cfm/a #en ft/min
     return (vel,"ft/min")
 
-sizes = square_duct_diam_in(1000,0.08)
-print(sizes)
+
+def headloss_air_duct(cfm,diam,length):
+    #  lenght unit: m
+    HL_100ft = 0.109136*(cfm**1.9)/((convert_unit(diam,"millimètres","pouces"))**5.02)
+    HL_tot = (HL_100ft*convert_unit(length,"mètres","pieds")/100)*249
+    return HL_tot #Pa
+
+def duct_vel(diam, cfm):
+    #diam unit: mm
+    area = (math.pi*(diam/1000)**2)/4 #m^2
+    vel = cfm/convert_unit(area,"mètres_carrés","pieds_carrés") #pieds minutes
+    
+    return vel
+
+def headloss_air_MLCoeff(K,diam, cfm):
+    dP = (K*1.2*(duct_vel(diam,cfm)*0.00508)**2)/2
+    return dP #Pa
+
+def sys_curve(Cfm_min,Cfm_max,step,MLC,duct):
+    #duct: [diam, length],[diam,lenght]]      MLC: [[Cl_elbow, N_elbow, diam], [Cl_tee, N_tee, diam]]
+    sp_Y = np.empty(int((Cfm_max-Cfm_min)/step)+1)
+    cfm_X = np.empty(int((Cfm_max-Cfm_min)/step)+1)
+    j = 0
+    for cfm in range (Cfm_min,Cfm_max+step,step):
+        
+        Hl=0
+        n_duct = np.shape(duct)[0]
+        for i in range(0,n_duct):
+            Hl = Hl + headloss_air_duct(cfm,duct[i,0],duct[i,1])
+
+        n_mlc = np.shape(MLC)[0]
+        for i in range(0,n_mlc):
+            Hl = Hl + MLC[i,1]*headloss_air_MLCoeff(MLC[i,0],MLC[i,2],cfm)
+        
+        sp_Y[j]=Hl
+        cfm_X[j]=cfm
+        j = j +1 
+    return (cfm_X,sp_Y)
+

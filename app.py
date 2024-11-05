@@ -1,4 +1,3 @@
-
 import sys
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QTabWidget, QVBoxLayout, 
@@ -19,10 +18,12 @@ class MainWindow(QMainWindow):
         # Créer les onglets
         self.home_tab = QWidget()
         self.conversion_tab = QWidget()
+        self.ductulator_tab = QWidget()  # Nouvel onglet Ductulator
         
         # Ajouter les onglets au widget à onglets
         self.tabs.addTab(self.home_tab, "Accueil")
         self.tabs.addTab(self.conversion_tab, "Conversion")
+        self.tabs.addTab(self.ductulator_tab, "Ductulator")  # Ajouter l'onglet
         
         # Configurer l'onglet d'accueil
         self.home_layout = QVBoxLayout()
@@ -33,7 +34,10 @@ class MainWindow(QMainWindow):
         
         # Configurer l'onglet de conversion
         self.setup_conversion_tab()
-    
+        
+        # Configurer l'onglet Ductulator
+        self.setup_ductulator_tab()
+
     def setup_conversion_tab(self):
         self.conversion_layout = QVBoxLayout()
         
@@ -61,11 +65,10 @@ class MainWindow(QMainWindow):
         self.create_conversion_section("Couple", ["newton_mètres", "livres_pieds"], self.right_column)
 
         # Section Débits Volumique
-        self.create_conversion_section("Débits volumique",["litres_par_seconde","millilitres_par_seconde","gallons_par_minute","mètres_cubes_par_seconde","pieds_cubes_par_seconde","litres_par_minute","mètres_cubes_par_heure"],self.left_column)
+        self.create_conversion_section("Débits volumique", ["litres_par_seconde", "millilitres_par_seconde", "gallons_par_minute", "mètres_cubes_par_seconde", "pieds_cubes_par_seconde", "litres_par_minute", "mètres_cubes_par_heure"], self.left_column)
 
         # Section Débits massique
-        self.create_conversion_section("Débits massique",["kilogrammes_par_seconde","grammes_par_seconde","tonnes_par_seconde","livres_par_seconde"],self.right_column)
-
+        self.create_conversion_section("Débits massique", ["kilogrammes_par_seconde", "grammes_par_seconde", "tonnes_par_seconde", "livres_par_seconde"], self.right_column)
 
         # Ajouter les colonnes au layout principal
         self.column_layout.addLayout(self.left_column)
@@ -77,7 +80,39 @@ class MainWindow(QMainWindow):
         self.conversion_layout.addWidget(self.history_list)
         
         self.conversion_tab.setLayout(self.conversion_layout)
-    
+
+    def setup_ductulator_tab(self):
+        ductulator_layout = QVBoxLayout()
+        
+        # Groupes de saisie pour deux ensembles distincts
+        self.group1_layout, self.cfm_input1, self.head_loss_input1 = self.create_duct_sizing_group("Ensemble 1")
+        self.group2_layout, self.cfm_input2, self.head_loss_input2 = self.create_duct_sizing_group("Ensemble 2")
+        
+        # Ajouter les deux groupes au layout principal
+        ductulator_layout.addLayout(self.group1_layout)
+        ductulator_layout.addLayout(self.group2_layout)
+        
+        # Bouton pour effectuer le dimensionnement pour les deux ensembles
+        self.size_button = QPushButton("Dimensionner")
+        self.size_button.clicked.connect(self.perform_duct_sizing)
+        ductulator_layout.addWidget(self.size_button)
+        
+        # Boîte pour afficher les résultats pour chaque ensemble
+        self.result_box1 = QListWidget()
+        self.result_box2 = QListWidget()
+        ductulator_layout.addWidget(QLabel("Résultats pour l'ensemble 1:"))
+        ductulator_layout.addWidget(self.result_box1)
+        ductulator_layout.addWidget(QLabel("Résultats pour l'ensemble 2:"))
+        ductulator_layout.addWidget(self.result_box2)
+        
+        # Historique des dimensionnements
+        self.history_list_ductulator = QListWidget()
+        ductulator_layout.addWidget(QLabel("Historique des réponses:"))
+        ductulator_layout.addWidget(self.history_list_ductulator)
+        
+        # Définir le layout pour l'onglet Ductulator
+        self.ductulator_tab.setLayout(ductulator_layout)
+
     def create_conversion_section(self, title, units, parent_layout):
         group = QGroupBox(title)
         layout = QVBoxLayout()
@@ -111,7 +146,22 @@ class MainWindow(QMainWindow):
         group.setLayout(layout)
         
         parent_layout.addWidget(group)
-    
+
+    def create_duct_sizing_group(self, title):
+        group_layout = QVBoxLayout()
+        
+        group_layout.addWidget(QLabel(f"{title} - CFM:"))
+        cfm_input = QLineEdit()
+        cfm_input.setPlaceholderText("Entrez le CFM")
+        group_layout.addWidget(cfm_input)
+        
+        group_layout.addWidget(QLabel(f"{title} - Perte de charge (perte/100 ft):"))
+        head_loss_input = QLineEdit()
+        head_loss_input.setPlaceholderText("Entrez la perte de charge")
+        group_layout.addWidget(head_loss_input)
+        
+        return group_layout, cfm_input, head_loss_input
+
     def perform_conversion(self, input_value, from_unit, to_unit, result_layout):
         try:
             value = float(input_value.text())
@@ -128,6 +178,44 @@ class MainWindow(QMainWindow):
             self.update_history(result_text)
         except ValueError as e:
             result_label.setText(f"Erreur : {str(e)}")
+
+    def perform_duct_sizing(self):
+        try:
+            # Récupérer les valeurs du premier ensemble
+            cfm1 = float(self.cfm_input1.text())
+            head_loss1 = float(self.head_loss_input1.text())
+            combinations1 = eng.square_duct_diam_mm(cfm1, head_loss1)
+            
+            # Afficher les résultats pour l'ensemble 1
+            self.result_box1.clear()
+            if combinations1:
+                for combo in combinations1:
+                    self.result_box1.addItem(f"{combo[0]} mm x {combo[1]} mm")
+            else:
+                self.result_box1.addItem("Aucune combinaison trouvée.")
+            
+            # Récupérer les valeurs du second ensemble
+            cfm2 = float(self.cfm_input2.text())
+            head_loss2 = float(self.head_loss_input2.text())
+            combinations2 = eng.square_duct_diam_mm(cfm2, head_loss2)
+            
+            # Afficher les résultats pour l'ensemble 2
+            self.result_box2.clear()
+            if combinations2:
+                for combo in combinations2:
+                    self.result_box2.addItem(f"{combo[0]} mm x {combo[1]} mm")
+            else:
+                self.result_box2.addItem("Aucune combinaison trouvée.")
+            
+            # Ajouter à l'historique
+            history_entry = f"Ensemble 1: {cfm1} CFM, {head_loss1} Pa - Ensemble 2: {cfm2} CFM, {head_loss2} Pa"
+            self.history_list_ductulator.addItem(history_entry)
+            
+        except ValueError as e:
+            self.result_box1.clear()
+            self.result_box1.addItem(f"Erreur : {str(e)}")
+            self.result_box2.clear()
+            self.result_box2.addItem(f"Erreur : {str(e)}")
 
     def update_history(self, result_text):
         # Ajouter le nouveau résultat en haut de la liste
