@@ -171,13 +171,11 @@ def square_duct_diam_mm(cfm,head_loss):
                     cond_sizes.append((a,b))
     return cond_sizes
 
-
 def square_duct_vel(cfm,dim):
     #retourne la vélocité pour les dimension rectengulaire données (a,b) en pouce
     a = (dim(0)/12)*(dim(1)/12) #aire de passage en ft^2
     vel = cfm/a #en ft/min
     return (vel,"ft/min")
-
 
 def headloss_air_duct(cfm,diam,length):
     #  lenght unit: m
