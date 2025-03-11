@@ -14,5 +14,7 @@ class System:
         return pressions
     
     def __repr__(self):
-        details = "\n".join([str(branche) for branche in self.branches])
-        return f"Système {self.name}:\n{details}"
+        details = f"Système {self.name}:\n"
+        for branche in self.branches:
+            details += str(branche)  # This will now include conduits and coudes!
+        return details

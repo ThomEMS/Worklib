@@ -17,4 +17,9 @@ class Branche:
         self.total_HL = sum(conduit.HL for conduit in self.conduits) + sum(coude.HL for coude in self.coudes)
     
     def __repr__(self):
-        return f"Branche {self.name}: Perte de pression totale = {self.total_HL:.2f} Pa"
+        details = f"  Branche {self.name} (Perte totale = {self.total_HL:.2f} Pa)\n"
+        for conduit in self.conduits:
+            details += f"    - {conduit}\n"
+        for coude in self.coudes:
+            details += f"    - {coude}\n"
+        return details
