@@ -31,19 +31,19 @@ def duct_vel(diam, cfm):
     
     return vel
 
+def pressure_loss(diameter, length, flow_rate):
+    #  flow unit: cfm
+    vel = duct_vel(diameter,flow_rate) #pieds min
+    re = vel*0.00508*diameter/1000*AIRDENSITY/AIRVISCOSITY
+    if re < 4000:
+        HL_tot = 0
+    else:       
+        rr = GALVANISEDROUGHNESS/diameter
+        f = colebrook_white_friction_factor(re, rr)
+        HL_tot = darcy_weisbach(length, vel*0.00508, diameter/1000, f)
+    
+    return HL_tot #Pa
+
 def headloss_air_MLCoeff(K,diam, cfm):
     dP = (K*1.2*(duct_vel(diam,cfm)*0.00508)**2)/2
     return dP #Pa
-
-def pressure_loss(diameter, length, flow_rate):
-        #  flow unit: cfm
-        vel = duct_vel(diameter,flow_rate)
-        re = vel*diameter*AIRDENSITY/AIRVISCOSITY
-        if re < 4000:
-            HL_tot = 0
-        else:       
-            rr = GALVANISEDROUGHNESS/diameter
-            f = colebrook_white_friction_factor(re, rr)
-            HL_tot = darcy_weisbach(length, vel, diameter, f)
-        
-        return HL_tot #Pa
