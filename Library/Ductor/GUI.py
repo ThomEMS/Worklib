@@ -1,10 +1,11 @@
 from PyQt6.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QPushButton, QLabel, QLineEdit, QDateEdit, QStackedWidget, QDialog,
-    QFormLayout, QComboBox, QDialogButtonBox, QTextEdit, QInputDialog, QHBoxLayout
+    QFormLayout, QComboBox, QDialogButtonBox, QTextEdit, QInputDialog, QHBoxLayout, QFileDialog
 )
 from PyQt6.QtCore import QDate
 import sys
 from System import System
+from fpdf import FPDF
 from Branche import Branche
 from Duct import Duct
 from Coude import Coude
@@ -51,6 +52,117 @@ class ProjectSetup(QWidget):
         self.stacked_widget.setCurrentIndex(1)
 
 class DesignPage(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.system = None  # System will be initialized when receiving calc_name
+        self.initUI()
+
+    def set_system_name(self, calc_name):
+        self.system = System(calc_name)
+        self.update_summary()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+
+        # Résumé du système avec indentation
+        self.system_summary = QTextEdit()
+        self.system_summary.setReadOnly(True)
+        self.system_summary.setPlaceholderText("Résumé du système...")
+        layout.addWidget(self.system_summary)
+
+        # Menu déroulant pour sélectionner une branche
+        self.branch_selector = QComboBox()
+        self.branch_selector.addItem("Sélectionner une branche")
+        self.branch_selector.currentIndexChanged.connect(self.update_buttons)
+        layout.addWidget(self.branch_selector)
+
+        # Boutons
+        self.add_branch_button = QPushButton("Nouvelle Branche")
+        self.add_branch_button.clicked.connect(self.add_branch)
+        layout.addWidget(self.add_branch_button)
+
+        self.add_duct_button = QPushButton("Ajouter un Conduit")
+        self.add_duct_button.setEnabled(False)
+        self.add_duct_button.clicked.connect(self.add_duct)
+        layout.addWidget(self.add_duct_button)
+
+        self.add_fitting_button = QPushButton("Ajouter plusieurs Raccords")
+        self.add_fitting_button.setEnabled(False)
+        self.add_fitting_button.clicked.connect(self.add_multiple_fittings)
+        layout.addWidget(self.add_fitting_button)
+        
+        # Export Button
+        self.export_button = QPushButton("Exporter en PDF")
+        self.export_button.clicked.connect(self.export_to_pdf)
+        layout.addWidget(self.export_button)
+        
+        self.setLayout(layout)
+    
+    def add_branch(self):
+        branch_name, ok = QInputDialog.getText(self, "Nouvelle Branche", "Nom de la branche:")
+        if ok and branch_name:
+            new_branch = Branche(branch_name)
+            self.system.ajouter_branche(new_branch)
+            self.branch_selector.addItem(branch_name)
+            self.update_summary()
+    
+    def add_duct(self):
+        selected_branch = self.branch_selector.currentText()
+        if selected_branch != "Sélectionner une branche":
+            dialog = AddDuctDialog(self.system, selected_branch)
+            dialog.exec()
+            self.update_summary()
+    
+    def add_multiple_fittings(self):
+        selected_branch = self.branch_selector.currentText()
+        if selected_branch != "Sélectionner une branche":
+            dialog = AddMultipleFittingsDialog(self.system, selected_branch)
+            dialog.exec()
+            self.update_summary()
+    
+    def update_summary(self):
+        if not self.system:
+            return
+        
+        self.system_summary.setText(str(self.system))
+
+    def update_buttons(self):
+        has_selection = self.branch_selector.currentText() != "Sélectionner une branche"
+        self.add_duct_button.setEnabled(has_selection)
+        self.add_fitting_button.setEnabled(has_selection)
+    
+    def export_to_pdf(self):
+        if not self.system:
+            return
+        
+        options = QFileDialog.Options()
+        file_name, _ = QFileDialog.getSaveFileName(self, "Exporter en PDF", "", "PDF Files (*.pdf);;All Files (*)", options=options)
+        
+        if file_name:
+            if not file_name.endswith(".pdf"):
+                file_name += ".pdf"
+            
+            pdf = FPDF()
+            pdf.set_auto_page_break(auto=True, margin=15)
+            pdf.add_page()
+            
+            # Header with company logo and project info
+            pdf.set_font("Arial", style="B", size=14)
+            pdf.cell(0, 10, "Rapport de Calcul - Système de Ventilation", ln=True, align="C")
+            pdf.image("company_logo.png", x=10, y=10, w=30)  # Adjust logo path and position
+            pdf.ln(20)
+            
+            pdf.set_font("Arial", size=12)
+            pdf.cell(0, 10, f"Projet: {self.system.name}", ln=True)
+            pdf.cell(0, 10, f"Date: {QDate.currentDate().toString('dd/MM/yyyy')}", ln=True)
+            pdf.ln(10)
+            
+            # System Summary
+            pdf.set_font("Arial", size=10)
+            pdf.multi_cell(0, 8, str(self.system))
+            
+            pdf.output(file_name)
+
     def __init__(self):
         super().__init__()
         self.system = None  # System will be initialized when receiving calc_name
