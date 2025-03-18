@@ -13,6 +13,14 @@ class Branche:
         self.coudes.append(coude)
         self.calculer_perte_pression()
     
+    def enlever_item(self, item):
+        
+        if item in self.conduits:
+            self.conduits.remove(item)
+        elif item in self.coudes:
+            self.coudes.remove(item)
+        self.calculer_perte_pression()
+
     def calculer_perte_pression(self):
         self.total_HL = sum(conduit.HL for conduit in self.conduits) + sum(coude.HL for coude in self.coudes)
     
